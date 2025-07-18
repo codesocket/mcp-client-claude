@@ -259,39 +259,11 @@ class SimpleMCPClient:
         except Exception as e:
             print(f"DEBUG: Failed to get real tools, error: {e}")
         
-        # Fallback to mock tools for demo
-        mock_tools = {
-            "tools": [
-                {
-                    "name": "demo_file_reader",
-                    "description": "Demo: Read and analyze files from the filesystem",
-                    "inputSchema": {
-                        "type": "object",
-                        "properties": {
-                            "path": {"type": "string", "description": "File path to read"}
-                        },
-                        "required": ["path"]
-                    }
-                },
-                {
-                    "name": "demo_data_analyzer", 
-                    "description": "Demo: Analyze data and generate insights",
-                    "inputSchema": {
-                        "type": "object",
-                        "properties": {
-                            "data": {"type": "string", "description": "Data to analyze"},
-                            "format": {"type": "string", "description": "Output format", "enum": ["json", "text"]}
-                        },
-                        "required": ["data"]
-                    }
-                }
-            ]
-        }
-        
+        # Return empty tools list if real tools unavailable
         return MCPResponse(
             jsonrpc="2.0",
-            id="fallback_tools",
-            result=mock_tools
+            id="empty_tools",
+            result={"tools": []}
         )
     
     async def call_tool(self, name: str, arguments: Dict[str, Any], delegated_user: Optional[str] = None) -> MCPResponse:
@@ -304,20 +276,11 @@ class SimpleMCPClient:
         except Exception as e:
             print(f"DEBUG: Failed to call real tool {name}, error: {e}")
         
-        # Fallback to mock tool results for demo
-        mock_results = {
-            "demo_file_reader": {"content": "Demo file content", "size": 1024, "type": "text"},
-            "demo_data_analyzer": {"insights": ["Demo pattern detected", "Demo trend"], "confidence": 0.85},
-            "file_reader": {"content": "Demo file content", "size": 1024, "type": "text"},
-            "data_analyzer": {"insights": ["Demo pattern detected", "Demo trend"], "confidence": 0.85},
-        }
-        
-        result = mock_results.get(name, {"message": f"Demo: Tool {name} executed successfully", "arguments": arguments})
-        
+        # Return error if tool unavailable
         return MCPResponse(
             jsonrpc="2.0",
-            id=f"fallback_tool_{name}",
-            result=result
+            id=f"tool_error_{name}",
+            error={"code": -32601, "message": f"Tool '{name}' not available"}
         )
     
     async def call_tool_stream(self, name: str, arguments: Dict[str, Any], delegated_user: Optional[str] = None) -> AsyncGenerator[Dict[str, Any], None]:
@@ -331,17 +294,8 @@ class SimpleMCPClient:
         except Exception as e:
             print(f"DEBUG: Failed to stream tool {name}, error: {e}")
         
-        # Fallback to mock streaming response for demo
-        mock_chunks = [
-            {"type": "start", "tool": name, "arguments": arguments},
-            {"type": "progress", "message": f"Executing {name}..."},
-            {"type": "data", "content": f"Demo streaming result for {name}"},
-            {"type": "complete", "result": {"message": f"Demo: Tool {name} executed successfully", "arguments": arguments}}
-        ]
-        
-        for chunk in mock_chunks:
-            yield chunk
-            await asyncio.sleep(0.5)  # Simulate streaming delay
+        # Return error if streaming tool unavailable
+        yield {"type": "error", "error": f"Tool '{name}' not available for streaming"}
     
     async def list_resources(self) -> MCPResponse:
         # Try to get real resources from MCP server first
@@ -352,38 +306,28 @@ class SimpleMCPClient:
         except Exception as e:
             print(f"DEBUG: Failed to get real resources, error: {e}")
         
-        # Fallback to mock resources for demo
-        mock_resources = {
-            "resources": [
-                {
-                    "name": "demo_config.json",
-                    "uri": "file://demo_config.json", 
-                    "description": "Demo: Application configuration file"
-                },
-                {
-                    "name": "demo_data.csv",
-                    "uri": "file://demo_data.csv",
-                    "description": "Demo: Sample dataset"
-                }
-            ]
-        }
-        
+        # Return empty resources list if real resources unavailable
         return MCPResponse(
             jsonrpc="2.0",
-            id="fallback_resources",
-            result=mock_resources
+            id="empty_resources",
+            result={"resources": []}
         )
     
     async def read_resource(self, uri: str) -> MCPResponse:
-        mock_content = {
-            "content": f"Mock content for {uri}",
-            "mimeType": "text/plain"
-        }
+        # Try to read real resource from MCP server first
+        try:
+            params = {"uri": uri}
+            response = await self._make_request("resources/read", params)
+            if response.result:
+                return response
+        except Exception as e:
+            print(f"DEBUG: Failed to read real resource {uri}, error: {e}")
         
+        # Return error if resource unavailable
         return MCPResponse(
-            jsonrpc="2.0", 
-            id="mock_resource_content",
-            result=mock_content
+            jsonrpc="2.0",
+            id=f"resource_error_{uri}",
+            error={"code": -32601, "message": f"Resource '{uri}' not available"}
         )
     
     async def list_prompts(self) -> MCPResponse:
@@ -395,38 +339,28 @@ class SimpleMCPClient:
         except Exception as e:
             print(f"DEBUG: Failed to get real prompts, error: {e}")
         
-        # Fallback to mock prompts for demo
-        mock_prompts = {
-            "prompts": [
-                {
-                    "name": "demo_analyze_data",
-                    "description": "Demo: Analyze the provided data and generate insights"
-                },
-                {
-                    "name": "demo_summarize_file", 
-                    "description": "Demo: Summarize the contents of a file"
-                }
-            ]
-        }
-        
+        # Return empty prompts list if real prompts unavailable
         return MCPResponse(
             jsonrpc="2.0",
-            id="fallback_prompts", 
-            result=mock_prompts
+            id="empty_prompts",
+            result={"prompts": []}
         )
     
     async def get_prompt(self, name: str, arguments: Optional[Dict[str, Any]] = None) -> MCPResponse:
-        mock_prompt = {
-            "messages": [
-                {
-                    "role": "user",
-                    "content": f"Mock prompt for {name}"
-                }
-            ]
-        }
+        # Try to get real prompt from MCP server first
+        try:
+            params = {"name": name}
+            if arguments:
+                params["arguments"] = arguments
+            response = await self._make_request("prompts/get", params)
+            if response.result:
+                return response
+        except Exception as e:
+            print(f"DEBUG: Failed to get real prompt {name}, error: {e}")
         
+        # Return error if prompt unavailable
         return MCPResponse(
             jsonrpc="2.0",
-            id=f"prompt_{name}",
-            result=mock_prompt
+            id=f"prompt_error_{name}",
+            error={"code": -32601, "message": f"Prompt '{name}' not available"}
         )
