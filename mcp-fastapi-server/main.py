@@ -31,11 +31,11 @@ async def startup_event():
             print("DEBUG: Found existing OAuth configuration at startup")
             oauth_client = oauth_client_instance
             
-            # Update MCP client with Azure server URL
+            # Update MCP client with discovered server URL
             mcp_server_url = config["mcp_metadata"]["server_url"]
             mcp_client = SimpleMCPClient(mcp_server_url, oauth_client)
             intelligent_mcp_client = IntelligentMCPClient(mcp_client, llm_service)
-            print(f"DEBUG: Updated MCP client with Azure URL: {mcp_server_url}")
+            print(f"DEBUG: Updated MCP client with server URL: {mcp_server_url}")
         else:
             print("DEBUG: No existing OAuth configuration found at startup")
     except Exception as e:
@@ -449,9 +449,9 @@ async def get_delegation_consent_url(target_user: str, scope: str = "read"):
 
 @app.post("/mcp/initialize")
 async def initialize_mcp():
-    # Skip problematic initialize for Azure - just return success
-    # The React client calls this before loading tools, but Azure times out on initialize
-    print("DEBUG: Skipping MCP initialize for Azure compatibility")
+    # Skip problematic initialize for compatibility - just return success
+    # The React client calls this before loading tools, but some servers timeout on initialize
+    print("DEBUG: Skipping MCP initialize for compatibility")
     return {
         "protocolVersion": "1.0",
         "capabilities": {
@@ -461,7 +461,7 @@ async def initialize_mcp():
             "streaming": True
         },
         "serverInfo": {
-            "name": "Azure MCP Server",
+            "name": "Generic MCP Server",
             "version": "1.0.0"
         }
     }
@@ -470,22 +470,22 @@ async def initialize_mcp():
 @app.get("/mcp/tools")
 async def list_tools():
     try:
-        # Skip initialization for Azure MCP - go directly to tools/list
+        # Skip initialization for compatibility - go directly to tools/list
         response = await mcp_client.list_tools()
         if response.error:
             raise HTTPException(status_code=400, detail=response.error)
         return response.result
     except ValueError as e:
-        # Azure-specific errors from SimpleMCPClient
+        # MCP-specific errors from SimpleMCPClient
         error_msg = str(e)
         if "Authentication required" in error_msg:
             raise HTTPException(status_code=401, detail=error_msg)
-        elif "Azure MCP server error" in error_msg:
-            # Extract status code from Azure error message
+        elif "MCP server error" in error_msg:
+            # Extract status code from MCP error message
             if "(404)" in error_msg:
-                raise HTTPException(status_code=404, detail="MCP endpoint not found on Azure server")
+                raise HTTPException(status_code=404, detail="MCP endpoint not found on server")
             elif "(500)" in error_msg:
-                raise HTTPException(status_code=502, detail="Azure MCP server internal error")
+                raise HTTPException(status_code=502, detail="MCP server internal error")
             else:
                 raise HTTPException(status_code=400, detail=error_msg)
         else:
@@ -499,7 +499,7 @@ async def list_tools():
         if "ReadTimeout" in error_msg:
             raise HTTPException(
                 status_code=504,
-                detail="Azure MCP server timed out. The server may be overloaded."
+                detail="MCP server timed out. The server may be overloaded."
             )
         elif "All MCP endpoints failed" in error_msg:
             raise HTTPException(

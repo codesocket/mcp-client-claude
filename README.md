@@ -36,7 +36,7 @@ React UI (Port 4000) → FastAPI Server (Port 8001) → Remote MCP Server (OAuth
 - **Prompts**: List and retrieve with natural language interface
 - **Delegation**: Execute operations on behalf of other users
 - **Streaming Responses**: Real-time updates via NDJSON streaming
-- **Azure MCP Compatibility**: Native support for Azure API Gateway MCP deployments
+- **Universal MCP Support**: Compatible with any MCP server implementation
 
 ## Recent Improvements ✨
 
@@ -50,9 +50,9 @@ React UI (Port 4000) → FastAPI Server (Port 8001) → Remote MCP Server (OAuth
 - **Smart validation**: Required field indicators and parameter descriptions
 - **User-friendly interface**: No more manual JSON editing for simple tool calls
 
-### Enhanced Azure MCP Support
-- **Streaming protocol detection**: Automatic detection of Azure MCP streaming endpoints
-- **Improved error handling**: Better error messages and debugging for Azure deployments
+### Enhanced MCP Server Support
+- **Multiple endpoint detection**: Automatic detection of various MCP server configurations
+- **Improved error handling**: Better error messages and debugging for different server types
 - **OAuth state management**: Authentication persists across server restarts
 
 ### Development Experience
@@ -223,7 +223,7 @@ The application includes a guided OAuth 2.1 setup wizard with **zero manual conf
 
 The FastAPI server includes:
 - **OAuth state persistence** with automatic restoration on server restart
-- **Enhanced Azure MCP support** with streaming endpoint detection
+- **Enhanced MCP server support** with multiple endpoint detection
 - **Comprehensive error handling** with detailed debugging and logging
 - **Intelligent tool execution** with LLM-powered natural language processing
 - Automatic token refresh on 401 errors
