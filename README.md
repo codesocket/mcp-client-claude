@@ -20,6 +20,7 @@ React UI (Port 4000) → FastAPI Server (Port 8001) → Remote MCP Server (OAuth
 - **Automatic Token Refresh**: Seamless session management
 - **Server Discovery**: Automatic metadata detection from MCP servers
 - **Auto-Code Population**: Authorization codes automatically detected after consent
+- **OAuth State Management**: Persistent authentication across server restarts
 
 ### 🤖 **LLM-Powered Tool Inference**
 - **Natural Language Processing**: Ask questions in plain English
@@ -30,11 +31,34 @@ React UI (Port 4000) → FastAPI Server (Port 8001) → Remote MCP Server (OAuth
 - **Context-Aware Conversations**: Maintains conversation history
 
 ### 🔧 **Complete MCP Protocol Support**
-- **Tools**: List, call, and stream execution with AI assistance
+- **Tools**: List, call, and stream execution with AI assistance and dynamic forms
 - **Resources**: Browse and read with intelligent suggestions
 - **Prompts**: List and retrieve with natural language interface
 - **Delegation**: Execute operations on behalf of other users
-- **Streaming Responses**: Real-time updates via Server-Sent Events
+- **Streaming Responses**: Real-time updates via NDJSON streaming
+- **Azure MCP Compatibility**: Native support for Azure API Gateway MCP deployments
+
+## Recent Improvements ✨
+
+### AI Chat Interface Fix
+- **Fixed streaming communication**: Corrected NDJSON parsing in React client for proper AI chat responses
+- **Enhanced tool inference**: AI now successfully detects and executes available MCP tools
+- **Real-time execution**: See AI reasoning and tool execution in real-time
+
+### Dynamic Form System
+- **Schema-based forms**: Automatically generate UI forms from MCP tool input schemas
+- **Smart validation**: Required field indicators and parameter descriptions
+- **User-friendly interface**: No more manual JSON editing for simple tool calls
+
+### Enhanced Azure MCP Support
+- **Streaming protocol detection**: Automatic detection of Azure MCP streaming endpoints
+- **Improved error handling**: Better error messages and debugging for Azure deployments
+- **OAuth state management**: Authentication persists across server restarts
+
+### Development Experience
+- **Comprehensive logging**: Detailed debugging for tool execution and streaming
+- **Better error handling**: More informative error messages throughout the application
+- **Enhanced startup logic**: Automatic OAuth state restoration on server restart
 
 ## Quick Start
 
@@ -146,9 +170,11 @@ The application includes a guided OAuth 2.1 setup wizard with **zero manual conf
 
 ### 🔧 **Manual Tool Operations** 
 - View available MCP tools, resources, and prompts
-- Execute tools with custom JSON arguments
+- **Dynamic Forms**: Automatically generated forms based on tool schemas
+- Execute tools with custom JSON arguments or user-friendly forms
 - Use streaming tool execution for real-time updates
 - Browse MCP resources and prompts manually
+- **Smart Parameter Validation**: Forms validate required fields and provide descriptions
 
 ## API Endpoints
 
@@ -196,15 +222,21 @@ The application includes a guided OAuth 2.1 setup wizard with **zero manual conf
 ## Development
 
 The FastAPI server includes:
+- **OAuth state persistence** with automatic restoration on server restart
+- **Enhanced Azure MCP support** with streaming endpoint detection
+- **Comprehensive error handling** with detailed debugging and logging
+- **Intelligent tool execution** with LLM-powered natural language processing
 - Automatic token refresh on 401 errors
-- Comprehensive error handling
 - CORS middleware for React integration
-- Streaming support via Server-Sent Events
+- **NDJSON streaming support** for real-time AI responses
 - Modular OAuth and MCP client classes
 
 The React UI includes:
-- Real-time status updates
-- Tool execution with JSON argument input
-- Streaming response display
+- **Real-time status updates** with authentication state management
+- **Dynamic tool forms** generated from MCP tool schemas
+- **Fixed streaming support** with proper NDJSON parsing
+- **Enhanced AI chat interface** with real-time tool execution
+- Tool execution with JSON argument input and user-friendly forms
+- Streaming response display with proper error handling
 - Resource and prompt browsing
-- Clean, responsive interface
+- Clean, responsive interface with comprehensive CSS styling
