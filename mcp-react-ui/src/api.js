@@ -169,6 +169,7 @@ export const aiAPI = {
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
+    let buffer = '';
 
     try {
       while (true) {
@@ -177,21 +178,34 @@ export const aiAPI = {
         if (done) break;
         
         const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
+        buffer += chunk;
+        
+        // Process complete lines (NDJSON format)
+        const lines = buffer.split('\n');
+        // Keep the last potentially incomplete line in buffer
+        buffer = lines.pop() || '';
         
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') {
-              return;
-            }
+          if (line.trim()) {
             try {
-              const parsed = JSON.parse(data);
+              const parsed = JSON.parse(line);
               onUpdate(parsed);
             } catch (e) {
-              console.warn('Failed to parse streaming data:', data);
+              console.error('Failed to parse streaming JSON:', line, e);
+              onUpdate({ type: 'error', message: 'Failed to parse response' });
             }
           }
+        }
+      }
+      
+      // Process any remaining buffer content
+      if (buffer.trim()) {
+        try {
+          const parsed = JSON.parse(buffer);
+          onUpdate(parsed);
+        } catch (e) {
+          console.error('Failed to parse final streaming JSON:', buffer, e);
+          onUpdate({ type: 'error', message: 'Failed to parse final response' });
         }
       }
     } finally {

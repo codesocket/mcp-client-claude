@@ -13,6 +13,7 @@ function App() {
   const [prompts, setPrompts] = useState([]);
   const [selectedTool, setSelectedTool] = useState('');
   const [toolArguments, setToolArguments] = useState('{}');
+  const [toolParams, setToolParams] = useState({});
   const [toolOutput, setToolOutput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [serverConfig, setServerConfig] = useState(null);
@@ -112,6 +113,30 @@ function App() {
     } catch (error) {
       setStatus({ type: 'error', message: `Failed to load prompts: ${error.message}` });
     }
+  };
+
+  const getSelectedToolSchema = () => {
+    return tools.find(tool => tool.name === selectedTool);
+  };
+
+  const handleToolSelection = (toolName) => {
+    setSelectedTool(toolName);
+    setToolParams({});
+    setToolArguments('{}');
+    const toolSchema = tools.find(tool => tool.name === toolName);
+    if (toolSchema && toolSchema.inputSchema && toolSchema.inputSchema.properties) {
+      const initialParams = {};
+      Object.keys(toolSchema.inputSchema.properties).forEach(key => {
+        initialParams[key] = '';
+      });
+      setToolParams(initialParams);
+    }
+  };
+
+  const updateToolParam = (paramName, value) => {
+    const updatedParams = { ...toolParams, [paramName]: value };
+    setToolParams(updatedParams);
+    setToolArguments(JSON.stringify(updatedParams, null, 2));
   };
 
   const callTool = async () => {
@@ -225,7 +250,7 @@ function App() {
                   <p>{tool.description}</p>
                   <button 
                     className="button"
-                    onClick={() => setSelectedTool(tool.name)}
+                    onClick={() => handleToolSelection(tool.name)}
                   >
                     Select
                   </button>
@@ -237,12 +262,47 @@ function App() {
           {selectedTool && (
             <div className="card">
               <h2>Execute Tool: {selectedTool}</h2>
-              <textarea
-                className="textarea"
-                placeholder="Tool arguments (JSON)"
-                value={toolArguments}
-                onChange={(e) => setToolArguments(e.target.value)}
-              />
+              
+              {(() => {
+                const toolSchema = getSelectedToolSchema();
+                if (toolSchema && toolSchema.inputSchema && toolSchema.inputSchema.properties) {
+                  return (
+                    <div className="tool-params">
+                      <h3>Parameters:</h3>
+                      {Object.entries(toolSchema.inputSchema.properties).map(([paramName, paramSchema]) => (
+                        <div key={paramName} className="param-field">
+                          <label>
+                            {paramName}
+                            {toolSchema.inputSchema.required?.includes(paramName) && <span className="required">*</span>}
+                          </label>
+                          <input
+                            type="text"
+                            className="input"
+                            placeholder={paramSchema.description || `Enter ${paramName}`}
+                            value={toolParams[paramName] || ''}
+                            onChange={(e) => updateToolParam(paramName, e.target.value)}
+                          />
+                          {paramSchema.description && (
+                            <small className="param-description">{paramSchema.description}</small>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
+              <div className="json-preview">
+                <label>Generated JSON:</label>
+                <textarea
+                  className="textarea"
+                  value={toolArguments}
+                  onChange={(e) => setToolArguments(e.target.value)}
+                  rows="4"
+                />
+              </div>
+
               <button className="button" onClick={callTool}>
                 Execute
               </button>
